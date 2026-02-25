@@ -1,0 +1,174 @@
+% Sample Beamer presentation: LaTeX to PDF to images to PPTX
+\documentclass[aspectratio=169,11pt]{beamer}
+\usetheme{default}
+
+% Margins
+\setbeamersize{text margin left=23mm,text margin right=23mm}
+
+% Font sizes
+\setbeamerfont{title}{size=\fontsize{20}{24}\selectfont,series=\bfseries}
+\setbeamerfont{frametitle}{size=\fontsize{22}{26}\selectfont,series=\bfseries}
+\setbeamerfont{date in head/foot}{size=\fontsize{8}{10}\selectfont}
+\setbeamercolor{date in head/foot}{fg=gray}
+
+% White background, minimal
+\setbeamercolor{background canvas}{bg=white}
+\setbeamercolor{frametitle}{fg=black}
+\setbeamercolor{normal text}{fg=black}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{headline}{}
+\setbeamertemplate{frametitle}{\vspace{0.6em}\insertframetitle}
+
+% ============ LOGO (footer, right side) ============
+% Replace logo.png with your own image, or comment out the next line for no logo
+\newcommand{\mylogo}{}
+\renewcommand{\mylogo}{\raisebox{-0.15cm}{\includegraphics[height=0.45cm]{MichiganTech_Horizontal_TwoColor.png}}}
+% ============ END LOGO ============
+
+% Footer: slide number, date center, logo right
+\setbeamertemplate{footline}{
+  \vspace{0.6em}
+  \hrule
+  \vspace{0.3em}
+  \leavevmode
+  \hbox to \textwidth{%
+    \hspace{1em}\usebeamerfont{date in head/foot}%
+    \ifnum\insertframenumber=1 \relax
+    \else
+      \textcolor{gray}{(\number\numexpr\insertframenumber-1\relax\,/\,\number\numexpr\inserttotalframenumber-1\relax)}
+    \fi
+    \hfill
+    \makebox[0pt]{\usebeamerfont{date in head/foot}\textcolor{gray}{\insertdate}}%
+    \hfill
+    \llap{\mylogo\hspace{1em}}%
+  }
+  \vspace{0.6em}
+}
+
+\setbeamertemplate{title page}{
+  \vspace{2em}
+  \centering
+  \parbox[t]{\linewidth}{\centering\usebeamerfont{title}\inserttitle\par}
+  \vspace{0.8em}\par
+  \parbox[t]{0.65\linewidth}{\centering
+    \usebeamerfont{subtitle}\mdseries\insertauthor\par
+    \vspace{0.3em}
+    \usebeamerfont{institute}\insertinstitute
+  }
+  \vfill
+}
+
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+
+% Bullet color
+\definecolor{accent}{HTML}{FFC000}
+\setbeamercolor{itemize item}{fg=accent}
+\setbeamercolor{enumerate item}{fg=accent}
+\setbeamertemplate{itemize item}{\color{accent}$\bullet$}
+\setbeamertemplate{enumerate item}{\color{accent}\insertenumlabel.}
+
+\title{Sample Presentation Title}
+\author{Author One, Author Two}
+\institute{Your Institution}
+% Date in mm/dd/yyyy format (e.g. 02/25/2026)
+\date{02/25/2026}
+
+\begin{document}
+
+%----------------------------------------------------------------------
+\section{Title}
+%----------------------------------------------------------------------
+\frame{\titlepage}
+
+%----------------------------------------------------------------------
+\section{Outline}
+%----------------------------------------------------------------------
+\begin{frame}{Outline}
+  \begin{enumerate}
+    \item Introduction
+    \item Methods (with image beside text)
+    \item Results
+    \item Conclusion and thank you
+  \end{enumerate}
+\end{frame}
+
+%----------------------------------------------------------------------
+\section{Introduction}
+%----------------------------------------------------------------------
+\begin{frame}{Introduction}
+  \begin{itemize}
+    \item \textbf{Topic}: Short description of the problem.
+    \item \textbf{Goal}: What you propose or show.
+    \item \textbf{Contribution}: Key takeaway (no bold mid-sentence; use labels only).
+  \end{itemize}
+\end{frame}
+
+%----------------------------------------------------------------------
+\section{Method Example}
+%----------------------------------------------------------------------
+% Example: image beside text (create_prez layout)
+\begin{frame}{Method Example}
+  \vspace{-0.4em}
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \begin{itemize}
+        \item Main idea in words.
+        \item Equation if needed:
+        \[
+          x^* = \arg\min_x f(x)
+        \]
+        \item Second point; keep text above footer.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \centering
+      % Replace with: \includegraphics[width=\linewidth,height=0.58\textheight,keepaspectratio]{your_figure.png}
+      \rule{0.8\linewidth}{0.58\textheight}\\[0.5em]
+      \small\textit{(Replace with your figure)}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+%----------------------------------------------------------------------
+\section{Results}
+%----------------------------------------------------------------------
+\begin{frame}{Results}
+  \begin{itemize}
+    \item \textbf{Summary}: Main result in one line.
+    \item \textbf{Comparison}: How it compares to baseline.
+  \end{itemize}
+\end{frame}
+
+%----------------------------------------------------------------------
+\section{Conclusion}
+%----------------------------------------------------------------------
+\begin{frame}{Conclusion}
+  \begin{itemize}
+    \item \textbf{Recap}: What you did.
+    \item \textbf{Takeaway}: What the audience should remember.
+  \end{itemize}
+\end{frame}
+
+%----------------------------------------------------------------------
+\section{Thank You}
+%----------------------------------------------------------------------
+\begin{frame}
+  \begin{center}
+  \vspace{1.5em}
+  {\LARGE \textbf{Thank you. Questions?}}
+  \vspace{2em}
+  \par
+  \textbf{Sample Presentation Title}
+  \vspace{1em}
+  \par
+  Author One, Author Two
+  \vspace{0.5em}
+  \par
+  Your Institution
+  \end{center}
+\end{frame}
+
+\end{document}

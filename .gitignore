@@ -1,0 +1,28 @@
+# LaTeX
+*.aux
+*.log
+*.nav
+*.out
+*.snm
+*.toc
+*.vrb
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
+# PDF (optional: commit or ignore)
+# presentation.pdf
+
+# Export output
+slides_export/
+*.pptx
+
+# Python
+.venv_pptx/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db
