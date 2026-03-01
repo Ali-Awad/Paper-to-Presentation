@@ -119,6 +119,17 @@ python3 export_slides.py          # PDF -> slides_export/*.png
 python3 slides_to_pptx.py         # PNGs -> presentation.pptx
 ```
 
+The PPTX builder also extracts `\note{...}` blocks from `presentation.tex` and adds them as speaker notes to the corresponding slides. To add speaker notes, place a `\note{...}` after each frame:
+
+```tex
+\begin{frame}{Slide Title}
+  \begin{itemize}
+    \item First point.
+  \end{itemize}
+\end{frame}
+\note{Explain the first point in more detail here.}
+```
+
 The PPTX output works in PowerPoint, Google Slides, or Keynote.
 
 ## Files
@@ -127,7 +138,7 @@ The PPTX output works in PowerPoint, Google Slides, or Keynote.
 |------|-------------|
 | `presentation.tex` | Main Beamer template |
 | `export_slides.py` | PDF to PNG export script |
-| `slides_to_pptx.py` | PNG to PPTX builder |
+| `slides_to_pptx.py` | PNG to PPTX builder with speaker notes |
 | `requirements.txt` | Python dependencies (PyMuPDF, python-pptx) |
 | `logo.png` | Placeholder footer logo (replace with your own) |
 

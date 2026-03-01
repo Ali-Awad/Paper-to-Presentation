@@ -1,0 +1,44 @@
+---
+description: Beamer presentation style, layout, and LaTeX-to-PPTX workflow
+globs: "**/presentation.tex,**/export_slides.py,**/slides_to_pptx.py"
+alwaysApply: false
+---
+
+# Presentation Slide Rules
+
+## Formatting
+
+- **Bold as leading labels only**: Use `\textbf{Label}:` at the start of bullets. Never bold mid-sentence.
+- **Consistent bold**: Every bullet in a slide must follow the same pattern. If one bullet has a bold label, all bullets on that slide should too.
+- **No em dashes**: Do not use `---` (em dash). Use commas, semicolons, or colons instead.
+
+## Content
+
+- **Concise bullets**: Keep slides readable. If a slide feels overwhelming, trim content or split into sub-bullets.
+- **Sub-bullets for multi-part points**: Break compound ideas into sub-bullets rather than one long sentence.
+- **Keynote speaker as bullets**: Use bullet points in keynote/speaker notes when transitioning between topics or when it improves clarity.
+- **Explain abbreviations**: When an abbreviation appears in keynote/speaker notes, spell it out in parentheses on first use (e.g., "CNN (Convolutional Neural Network)").
+- **Avoid overly bold claims**: Soften absolute language (e.g., "do not target" instead of "none target").
+- **Lead with top results**: In results slides, highlight the best-performing model first, not baselines or outliers.
+- **Include key variable comparisons** on each results slide where relevant (e.g., frame rate differences).
+- **Remove distracting outliers**: Omit odd or unrepresentative data points that distract from the main message.
+
+## Layout
+
+- **Image beside text**: Use `\begin{columns}[T]` with left column ~0.50\textwidth (text) and right column ~0.47\textwidth (figure). Do not place figures below text.
+- **Text above footer**: Keep body text from overlapping the footer. Use `\vspace{-0.4em}` at frame start; limit figure height (e.g., `height=0.58\textheight`); use `{\small ...}` for dense slides.
+
+## Style
+
+- **Sub-bullet color**: All bullet levels must use the same accent color. Override Beamer defaults if needed.
+- **Logo**: Use JPG format for the footer logo when available.
+- **Slide naming**: Use descriptive, audience-friendly titles (e.g., "Situation recognition" over "Factor prediction").
+
+## Workflow
+
+1. Edit `presentation.tex`
+2. Compile PDF: `latexmk -pdf -interaction=nonstopmode presentation.tex`
+3. Export PNGs: `python3 export_slides.py`
+4. Build PPTX: `python3 slides_to_pptx.py`
+
+Always recompile the PDF after .tex changes before re-exporting images or PPTX.
