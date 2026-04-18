@@ -14,11 +14,15 @@ not pulled into the extracted image.
 Figure collection
 -----------------
 Every ``\\includegraphics`` path referenced in the .tex is resolved against
-the ``\\graphicspath`` entries (typically ``Paper_files/``, ``Extracted_figures/``,
-``Assets/``) and **copied into** ``Extracted_figures/`` if it isn't already
-there. After conversion, ``Extracted_figures/`` contains one canonical copy
-of every figure used in the deck - the user never has to move figures there
-manually. Auto-cropped TikZ/table PNGs are written to the same folder as
+the ``\\graphicspath`` entries in the .tex (typically
+``{Extracted_figures/}{Paper_files/}{Assets/}``) and **copied into**
+``Extracted_figures/`` if it isn't already there. Source files the author
+places **next to the paper** live in ``Paper_files/``; the slide text only
+holds the basename. **For humans and agents:** if a name is missing from
+``Extracted_figures/``, look in ``Paper_files/`` for ``*.png`` / ``*.jpg`` /
+``*.pdf`` with that stem - do not assume figures exist only "in the .tex
+prose." After conversion, ``Extracted_figures/`` holds a canonical copy of
+every figure used. Auto-cropped TikZ/table PNGs are written as
 ``slide_content_<N>.png``. The footer logo (``Assets/logo.jpg``) is *not*
 copied - it's chrome, not slide content.
 

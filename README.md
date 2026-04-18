@@ -4,7 +4,7 @@
 
 Turn a research paper into an editable PowerPoint presentation in one command. This repo bundles a clean **LaTeX Beamer** template (16:9) with a Python converter (`beamer_to_pptx.py`) that rebuilds each slide as native PowerPoint objects - preserving speaker notes, the footer logo, and tightly-cropped figures pulled straight from your paper. The visual style is inspired by the [Michigan Technological University](https://www.mtu.edu/) PowerPoint template.
 
-The workflow in one line: drop your paper in `Paper_files/`, export its figures into `Extracted_figures/`, write the narrative in `presentation.tex`, run the converter, and hand the `.pptx` off to co-authors who don't use LaTeX.
+The workflow in one line: drop your paper **and** any figure files you pull out of it into `Paper_files/`, write the narrative in `presentation.tex` (reference figures by **filename only**), run the converter, and hand the `.pptx` off to co-authors who don't use LaTeX. The converter then copies every used figure into `Extracted_figures/` for you; you do not need to maintain that folder by hand.
 
 ## Features
 
@@ -33,7 +33,7 @@ The workflow in one line: drop your paper in `Paper_files/`, export its figures 
 |- Assets/                   # Logo, banner, and reusable graphics
 |   |- logo.jpg
 |   `- banner.png
-`- .cursor/rules/            # Cursor rules that enforce this repo's conventions
+`- .cursor/rules/            # Optional: Cursor project rules
 ```
 
 Two of these folders ship **empty on purpose**:
@@ -47,6 +47,15 @@ Two of these folders ship **empty on purpose**:
   It also saves the auto-cropped TikZ/table PNGs here as `slide_content_<N>.png`. So after conversion, `Extracted_figures/` is a canonical snapshot of every figure actually used in the deck - easy to share, archive, or review. Auto-cropped filenames are git-ignored; your own figures are tracked.
 
 `\graphicspath{{Extracted_figures/}{Paper_files/}{Assets/}}` is set in the template: the first run picks figures up from `Paper_files/` and copies them to `Extracted_figures/`; subsequent runs prefer the copies. Either way, you write `\includegraphics{figure1}` with no path prefix.
+
+### Where your figure files live
+
+In `presentation.tex` you reference figures by **filename only** (e.g. `figure1`); LaTeX finds the file using `\graphicspath` in the template.
+
+- **Start in `Paper_files/`** - that is where you should keep the paper PDF and any figure files you export or save as separate files (PNG, JPG, PDF, and so on).
+- **After you run the converter,** copies of the figures you actually use also show up in `Extracted_figures/`. If you are looking for a file and it is not there yet, it should still be in `Paper_files/`.
+- **`Assets/`** holds the logo, banner, and other reusable deck graphics, not the figures from your paper.
+- **Figures that exist only inside the paper PDF** are not pulled out for you. Export or screenshot them to a file in `Paper_files/` (or add another directory to `\graphicspath`) before you can `\includegraphics` them by name.
 
 ## Installation
 
@@ -151,6 +160,8 @@ Each slide is a `\begin{frame}...\end{frame}` block followed by a `\note{...}` f
 
 Beamer silently ignores `\note{...}` in the normal PDF output, so your audience-facing PDF stays clean while the PPTX export retains your speaker notes.
 
+**Readable slides:** keep each body bullet to a **short, scannable line** on 16:9 when you can. Long explanations belong in **speaker notes** (`\note{...}` on the line after `\end{frame}`) or in **sub-bullets**, not in a single long `\item`.
+
 ### Accent color
 
 The default bullet color is gold (`#FFC000`). Change it in the preamble:
@@ -209,4 +220,5 @@ The PPTX output works in PowerPoint, Google Slides, or Keynote.
 | `Paper_files/` | Paper + its figures (PDF / tex / PNG / JPG / supplementary). **Starts empty - you fill it.** |
 | `Extracted_figures/` | Canonical copies of every figure actually used in the deck + auto-cropped TikZ/table PNGs. **Populated by the converter, not by you.** |
 | `Assets/` | Logo, banner, and reusable graphics |
-| `.cursor/rules/` | Cursor rules that enforce this repo's conventions |
+| `AGENTS.md` | Optional: stricter formatting notes aimed at **automated editors**; skip it if you only work in the `.tex` by hand |
+| `.cursor/rules/` | Optional Cursor project rules; safe to ignore if you do not use Cursor |

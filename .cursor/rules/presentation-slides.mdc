@@ -6,6 +6,13 @@ alwaysApply: true
 
 # Presentation Slide Rules
 
+## For agents (figure discovery)
+
+- **Figures are not "text only"** - `presentation.tex` references them by **filename** via `\includegraphics{...}`. The search order is set by `\graphicspath` in the preamble: `Extracted_figures/`, then `Paper_files/`, then `Assets/`, then the repo root.
+- **When a figure seems missing** - list or glob `Paper_files/` for `*.png`, `*.jpg`, `*.pdf` (and similar). The author is expected to place paper-derived figures **next to the paper** in `Paper_files/`, not only in the `.tex` prose. Do not assume the only source of truth is the written slide text; the file system in `Paper_files/` is canonical for "what we have from the paper."
+- **After `beamer_to_pptx.py` runs** - copies of used figures land in `Extracted_figures/`. If that folder is empty or incomplete, the originals are still under `Paper_files/`.
+- **Embedded images inside the paper PDF** are not auto-extracted; the human (or a dedicated export step) must save them as files into `Paper_files/` before they can be `\includegraphics`d by filename.
+
 ## Project layout
 
 - `presentation.tex` - main Beamer source. `\graphicspath` is `{Extracted_figures/}{Paper_files/}{Assets/}`, so figures are referenced by filename only and found in either the paper folder or the copies the converter makes.
@@ -25,6 +32,7 @@ alwaysApply: true
 
 ## Content
 
+- **Tight bullets (AI editing `presentation.tex`)**: You **must** keep each body `\item` **short** (one line on 16:9 when possible; no paragraph-style items). You **must** put paragraphs of detail in `\note{...}` after `\end{frame}`, or split into sub-bullets. Long bullets mean the slide is doing the speaker's job; the slide headlines, the notes explain.
 - **Concise bullets**: Keep slides readable. If a slide feels overwhelming, trim content or split into sub-bullets.
 - **Sub-bullets for multi-part points**: Break compound ideas into sub-bullets rather than one long sentence.
 - **Speaker notes are default**: Every frame must be followed by a `\note{...}` block on the line immediately after `\end{frame}`. The converter reads these and writes them to the PPTX Notes pane.
