@@ -3,11 +3,13 @@
 \usetheme{default}
 
 % ============ ASSET SEARCH PATHS ============
-% Figures extracted from the paper live in Extracted_figures/.
-% Logos, banners, and any reusable graphics live in Assets/.
-% Both folders are searched by \includegraphics so you can write
-% \includegraphics{figure1} without a path prefix.
-\graphicspath{{Extracted_figures/}{Assets/}}
+% Keep figures alongside the paper in Paper_files/ while you draft the talk.
+% When you run beamer_to_pptx.py it copies every referenced figure into
+% Extracted_figures/ automatically, so you never have to move files by hand.
+% Extracted_figures/ is searched first so repeat runs pick up the copied
+% versions; Paper_files/ is searched next for the first conversion; Assets/
+% holds the logo, banner, and other reusable graphics.
+\graphicspath{{Extracted_figures/}{Paper_files/}{Assets/}}
 
 % Margins
 \setbeamersize{text margin left=23mm,text margin right=23mm}

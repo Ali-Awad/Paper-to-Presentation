@@ -9,9 +9,18 @@ for slides containing TikZ, tables, or other complex LaTeX that cannot be
 directly translated to PowerPoint objects. When a slide uses these elements,
 the corresponding PDF page is clip-rasterized around the element's own
 vector/image bounding box so that surrounding captions or bullet text are
-not pulled into the extracted image. The cropped PNGs are written to the
-``Extracted_figures/`` folder next to the .tex file (as ``slide_content_N.png``)
-alongside any figures you have manually placed there from the paper.
+not pulled into the extracted image.
+
+Figure collection
+-----------------
+Every ``\\includegraphics`` path referenced in the .tex is resolved against
+the ``\\graphicspath`` entries (typically ``Paper_files/``, ``Extracted_figures/``,
+``Assets/``) and **copied into** ``Extracted_figures/`` if it isn't already
+there. After conversion, ``Extracted_figures/`` contains one canonical copy
+of every figure used in the deck - the user never has to move figures there
+manually. Auto-cropped TikZ/table PNGs are written to the same folder as
+``slide_content_<N>.png``. The footer logo (``Assets/logo.jpg``) is *not*
+copied - it's chrome, not slide content.
 
 Speaker notes (``\\note{...}`` after a frame) and a footer logo are enabled
 by default. The logo is auto-detected from the .tex (any ``\\includegraphics``
@@ -98,9 +107,9 @@ def extract_preamble(tex):
     m = re.search(r'\\date\{(.+?)\}', tex, re.DOTALL)
     if m:
         info['date'] = m.group(1).strip()
-    m = re.search(r'\\graphicspath\{\{(.+?)\}\}', tex)
+    m = re.search(r'\\graphicspath\s*\{((?:\s*\{[^{}]+\}\s*)+)\}', tex)
     if m:
-        info['graphicspath'] = m.group(1)
+        info['graphicspath'] = re.findall(r'\{([^{}]+)\}', m.group(1))
     return info
 
 
@@ -414,15 +423,26 @@ def apply_font_to_all(prs, font_name):
 
 
 def resolve_image(name, graphicspath, base_dir):
-    """Find an image file, trying the graphicspath and common extensions."""
+    """Find an image file, trying each graphicspath entry and common extensions.
+
+    *graphicspath* may be a list of path strings (from ``\\graphicspath{{a/}{b/}}``),
+    a single string, or falsy. All entries are searched in order, followed by
+    *base_dir* as a last resort.
+    """
     candidates = [name]
     if not os.path.splitext(name)[1]:
         for ext in ['.png', '.jpg', '.jpeg', '.pdf']:
             candidates.append(name + ext)
 
-    dirs = [base_dir]
-    if graphicspath:
-        dirs.insert(0, os.path.join(base_dir, graphicspath))
+    if isinstance(graphicspath, str):
+        gp_list = [graphicspath] if graphicspath else []
+    elif graphicspath:
+        gp_list = list(graphicspath)
+    else:
+        gp_list = []
+
+    dirs = [os.path.join(base_dir, p) for p in gp_list]
+    dirs.append(base_dir)
 
     for d in dirs:
         for c in candidates:
@@ -430,6 +450,37 @@ def resolve_image(name, graphicspath, base_dir):
             if os.path.exists(p):
                 return p
     return None
+
+
+def ensure_in_extracted(src_path, extracted_dir):
+    """Copy *src_path* into ``Extracted_figures/`` if it isn't already there.
+
+    Returns the path inside *extracted_dir* (or *src_path* unchanged when the
+    source is already inside that folder or when the copy is a no-op). Files
+    with identical size at the destination are left untouched so repeat runs
+    don't churn timestamps.
+    """
+    import shutil
+
+    if not src_path or not os.path.exists(src_path):
+        return src_path
+    os.makedirs(extracted_dir, exist_ok=True)
+    src_abs = os.path.abspath(src_path)
+    ef_abs = os.path.abspath(extracted_dir)
+    try:
+        if os.path.commonpath([src_abs, ef_abs]) == ef_abs:
+            return src_path
+    except ValueError:
+        pass
+    dst = os.path.join(extracted_dir, os.path.basename(src_path))
+    if os.path.exists(dst):
+        try:
+            if os.path.getsize(dst) == os.path.getsize(src_path):
+                return dst
+        except OSError:
+            pass
+    shutil.copy2(src_path, dst)
+    return dst
 
 
 # =====================================================================
@@ -742,9 +793,9 @@ def build_pptx(tex_path, pdf_path=None, output_path=None):
         output_path = os.path.join(base_dir,
             os.path.splitext(os.path.basename(tex_path))[0] + '_editable.pptx')
 
-    fallback_dir = os.path.join(base_dir, 'Extracted_figures')
-    if pdf_path:
-        os.makedirs(fallback_dir, exist_ok=True)
+    extracted_dir = os.path.join(base_dir, 'Extracted_figures')
+    fallback_dir = extracted_dir
+    os.makedirs(extracted_dir, exist_ok=True)
 
     prs = Presentation()
     prs.slide_width = SLIDE_W
@@ -834,7 +885,7 @@ def build_pptx(tex_path, pdf_path=None, output_path=None):
                 add_bullet_list(s, items, CONTENT_L, BODY_TOP, LEFT_W, BODY_H, is_enum)
 
             resolved = [resolve_image(img, graphicspath, base_dir) for img in images]
-            resolved = [r for r in resolved if r]
+            resolved = [ensure_in_extracted(r, extracted_dir) for r in resolved if r]
 
             if len(resolved) == 1:
                 _place_single_image(s, resolved[0], RIGHT_L, BODY_TOP, RIGHT_W, BODY_H)
@@ -871,7 +922,7 @@ def build_pptx(tex_path, pdf_path=None, output_path=None):
 
         elif images:
             resolved = [resolve_image(img, graphicspath, base_dir) for img in images]
-            resolved = [r for r in resolved if r]
+            resolved = [ensure_in_extracted(r, extracted_dir) for r in resolved if r]
             if resolved:
                 _place_single_image(s, resolved[0], CONTENT_L, BODY_TOP, CONTENT_W, BODY_H)
                 cap_text = captions[-1] if captions else ''

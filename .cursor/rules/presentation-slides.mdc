@@ -8,13 +8,14 @@ alwaysApply: true
 
 ## Project layout
 
-- `presentation.tex` - main Beamer source. `\graphicspath` is set to `{Extracted_figures/}{Assets/}` so figures can be referenced by filename only.
-- `Paper_files/` - the paper being presented (PDF / tex / supplementary). **User-populated; starts empty.** Never `\includegraphics` directly from here - extract the needed figure into `Extracted_figures/` first.
-- `Extracted_figures/` - **dual-purpose folder, starts empty**:
-  - Figures the user pulls from the paper for use on slides - always save paper figures here, not at the repo root.
-  - Auto-cropped TikZ/table PNGs written by `beamer_to_pptx.py` as `slide_content_<N>.png` (git-ignored).
-- `Assets/` - logo, banner, and any reusable graphics. The footer logo defaults to `Assets/logo.jpg`.
-- `beamer_to_pptx.py` - single-script converter: `.tex` (+ optional `.pdf`) into an editable `.pptx`. Writes its crop output into `Extracted_figures/`, not a separate folder.
+- `presentation.tex` - main Beamer source. `\graphicspath` is `{Extracted_figures/}{Paper_files/}{Assets/}`, so figures are referenced by filename only and found in either the paper folder or the copies the converter makes.
+- `Paper_files/` - the paper being presented AND any figures the user pulls out of it (PDF / tex / PNG / JPG / supplementary). **User-populated; starts empty.** This is the one place the user drops figure files.
+- `Extracted_figures/` - **populated by the converter, not by the user; starts empty**:
+  - `beamer_to_pptx.py` copies every `\includegraphics` source file into this folder so the deck's figure set is self-contained and archivable.
+  - Auto-cropped TikZ/table PNGs also land here as `slide_content_<N>.png` (git-ignored).
+  - Do not instruct users to hand-copy files into this folder; the converter does it.
+- `Assets/` - logo, banner, and any reusable graphics. The footer logo defaults to `Assets/logo.jpg` and is **not** copied into `Extracted_figures/` (it's chrome, not slide content).
+- `beamer_to_pptx.py` - single-script converter: `.tex` (+ optional `.pdf`) into an editable `.pptx`. Copies referenced figures into `Extracted_figures/` and writes its TikZ/table crops there too.
 
 ## Formatting
 
@@ -38,7 +39,7 @@ alwaysApply: true
 
 - **Image beside text**: Use `\begin{columns}[T]` with left column ~0.50\textwidth (text) and right column ~0.47\textwidth (figure). Do not place figures below text.
 - **Text above footer**: Keep body text from overlapping the footer. Use `\vspace{-0.4em}` at frame start; limit figure height (e.g., `height=0.58\textheight`); use `{\small ...}` for dense slides.
-- **Figures by filename only**: Because of `\graphicspath`, write `\includegraphics{figure1}` rather than `\includegraphics{Extracted_figures/figure1}`.
+- **Figures by filename only**: Because of `\graphicspath`, write `\includegraphics{figure1}` rather than `\includegraphics{Paper_files/figure1}` or `\includegraphics{Extracted_figures/figure1}`. Let the converter handle the copy.
 
 ## Style
 
