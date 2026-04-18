@@ -14,7 +14,7 @@
 # presentation.pdf
 
 # Export output
-slides_export/
+_fallback_images/
 *.pptx
 
 # Python

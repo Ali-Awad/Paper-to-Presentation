@@ -1,6 +1,13 @@
-% Sample Beamer presentation: LaTeX to PDF to images to PPTX
+% Sample Beamer presentation: LaTeX to PDF to editable PPTX
 \documentclass[aspectratio=169,11pt]{beamer}
 \usetheme{default}
+
+% ============ ASSET SEARCH PATHS ============
+% Figures extracted from the paper live in Extracted_figures/.
+% Logos, banners, and any reusable graphics live in Assets/.
+% Both folders are searched by \includegraphics so you can write
+% \includegraphics{figure1} without a path prefix.
+\graphicspath{{Extracted_figures/}{Assets/}}
 
 % Margins
 \setbeamersize{text margin left=23mm,text margin right=23mm}
@@ -20,9 +27,10 @@
 \setbeamertemplate{frametitle}{\vspace{0.6em}\insertframetitle}
 
 % ============ LOGO (footer, right side) ============
-% Replace logo.png with your own image, or comment out the next line for no logo
+% Logo is ON by default. Drop your logo into Assets/ (PNG or JPG).
+% To disable, comment out the \renewcommand line below.
 \newcommand{\mylogo}{}
-\renewcommand{\mylogo}{\raisebox{-0.15cm}{\includegraphics[height=0.45cm]{logo.png}}}
+\renewcommand{\mylogo}{\raisebox{-0.15cm}{\includegraphics[height=0.45cm]{Assets/logo.jpg}}}
 % ============ END LOGO ============
 
 % Footer: slide number, date center, logo right
@@ -76,12 +84,20 @@
 % Date in mm/dd/yyyy format (e.g. 02/25/2026)
 \date{02/25/2026}
 
+% ============ SPEAKER NOTES ============
+% Speaker notes are ON by default. Every content frame below ends with a
+% \note{...} block; beamer_to_pptx.py reads these and attaches them to the
+% corresponding slide's Notes pane in the generated .pptx. Keep the \note
+% on the line immediately after \end{frame} so the parser picks it up.
+% ============ END SPEAKER NOTES ============
+
 \begin{document}
 
 %----------------------------------------------------------------------
 \section{Title}
 %----------------------------------------------------------------------
 \frame{\titlepage}
+\note{Welcome the audience. Introduce yourself and co-authors. State the venue and date briefly.}
 
 %----------------------------------------------------------------------
 \section{Outline}
@@ -94,6 +110,7 @@
     \item Conclusion and thank you
   \end{enumerate}
 \end{frame}
+\note{Preview the talk. Mention how long each section will take so the audience knows what to expect.}
 
 %----------------------------------------------------------------------
 \section{Introduction}
@@ -105,6 +122,7 @@
     \item \textbf{Contribution}: Key takeaway (no bold mid-sentence; use labels only).
   \end{itemize}
 \end{frame}
+\note{Set context for the problem. Expand each bullet with one or two extra sentences of motivation.}
 
 %----------------------------------------------------------------------
 \section{Method Example}
@@ -125,12 +143,14 @@
     \end{column}
     \begin{column}{0.47\textwidth}
       \centering
-      % Replace with: \includegraphics[width=\linewidth,height=0.58\textheight,keepaspectratio]{your_figure.png}
+      % Replace the rule placeholder below with a figure from Extracted_figures/, e.g.:
+      % \includegraphics[width=\linewidth,height=0.58\textheight,keepaspectratio]{figure1}
       \rule{0.8\linewidth}{0.58\textheight}\\[0.5em]
-      \small\textit{(Replace with your figure)}
+      \small\textit{(Replace with your figure from Extracted\_figures/)}
     \end{column}
   \end{columns}
 \end{frame}
+\note{Walk through the method step by step. Point at the figure as you explain each stage.}
 
 %----------------------------------------------------------------------
 \section{Results}
@@ -141,6 +161,7 @@
     \item \textbf{Comparison}: How it compares to baseline.
   \end{itemize}
 \end{frame}
+\note{Lead with the best-performing result. Briefly call out the key variable that drove the improvement.}
 
 %----------------------------------------------------------------------
 \section{Conclusion}
@@ -151,6 +172,7 @@
     \item \textbf{Takeaway}: What the audience should remember.
   \end{itemize}
 \end{frame}
+\note{Restate the takeaway in one short sentence. Thank collaborators and funders if appropriate.}
 
 %----------------------------------------------------------------------
 \section{Thank You}
@@ -170,5 +192,6 @@
   Your Institution
   \end{center}
 \end{frame}
+\note{Invite questions. Have a slide buffer ready for anticipated questions.}
 
 \end{document}

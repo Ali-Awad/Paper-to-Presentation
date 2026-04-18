@@ -1,10 +1,18 @@
 ---
 description: Beamer presentation style, layout, and LaTeX-to-PPTX workflow
-globs: "**/presentation.tex,**/export_slides.py,**/slides_to_pptx.py"
-alwaysApply: false
+globs: "**/presentation.tex,**/beamer_to_pptx.py"
+alwaysApply: true
 ---
 
 # Presentation Slide Rules
+
+## Project layout
+
+- `presentation.tex` - main Beamer source. `\graphicspath` is set to `{Extracted_figures/}{Assets/}` so figures can be referenced by filename only.
+- `Assets/` - logo, banner, and any reusable graphics. The footer logo defaults to `Assets/logo.jpg`.
+- `Extracted_figures/` - figures pulled from the paper for use on slides. Always save paper figures here, not at the repo root.
+- `Paper_files/` - reference paper PDF / tex / supplementary material. Do not `\includegraphics` directly from here; extract the needed figure into `Extracted_figures/` first.
+- `beamer_to_pptx.py` - single-script converter: `.tex` (+ optional `.pdf`) into an editable `.pptx`.
 
 ## Formatting
 
@@ -16,8 +24,9 @@ alwaysApply: false
 
 - **Concise bullets**: Keep slides readable. If a slide feels overwhelming, trim content or split into sub-bullets.
 - **Sub-bullets for multi-part points**: Break compound ideas into sub-bullets rather than one long sentence.
-- **Keynote speaker as bullets**: Use bullet points in keynote/speaker notes when transitioning between topics or when it improves clarity.
-- **Explain abbreviations**: When an abbreviation appears in keynote/speaker notes, spell it out in parentheses on first use (e.g., "CNN (Convolutional Neural Network)").
+- **Speaker notes are default**: Every frame must be followed by a `\note{...}` block on the line immediately after `\end{frame}`. The converter reads these and writes them to the PPTX Notes pane.
+- **Speaker notes as bullets**: Use bullet-like phrasing in `\note{...}` when transitioning between topics or when it improves clarity.
+- **Explain abbreviations**: When an abbreviation appears in `\note{...}`, spell it out in parentheses on first use (e.g., "CNN (Convolutional Neural Network)").
 - **Avoid overly bold claims**: Soften absolute language (e.g., "do not target" instead of "none target").
 - **Lead with top results**: In results slides, highlight the best-performing model first, not baselines or outliers.
 - **Include key variable comparisons** on each results slide where relevant (e.g., frame rate differences).
@@ -27,18 +36,24 @@ alwaysApply: false
 
 - **Image beside text**: Use `\begin{columns}[T]` with left column ~0.50\textwidth (text) and right column ~0.47\textwidth (figure). Do not place figures below text.
 - **Text above footer**: Keep body text from overlapping the footer. Use `\vspace{-0.4em}` at frame start; limit figure height (e.g., `height=0.58\textheight`); use `{\small ...}` for dense slides.
+- **Figures by filename only**: Because of `\graphicspath`, write `\includegraphics{figure1}` rather than `\includegraphics{Extracted_figures/figure1}`.
 
 ## Style
 
 - **Sub-bullet color**: All bullet levels must use the same accent color. Override Beamer defaults if needed.
-- **Logo**: Use JPG format for the footer logo when available.
+- **Logo default**: The footer logo is enabled by default (`\renewcommand{\mylogo}{...}` uncommented) and points to `Assets/logo.jpg`. Prefer JPG for the footer logo when available.
 - **Slide naming**: Use descriptive, audience-friendly titles (e.g., "Situation recognition" over "Factor prediction").
+
+## Tables and TikZ
+
+- The converter falls back to image rasterization for `\begin{tabular}` and `\begin{tikzpicture}`.
+- Cropping is driven by the PDF's vector drawings (booktabs rule lines, TikZ paths) and embedded image rects, not by whitespace heuristics. Keep surrounding captions / bullet text out of the same horizontal band as the table so the clip stays tight.
+- When a table shares a slide with bullet text, the converter snaps the crop to the table's bottom rule line - do not place explanatory prose immediately under a table that is meant to be extracted as an image; put it in `\note{...}` or in a separate frame.
 
 ## Workflow
 
-1. Edit `presentation.tex`
-2. Compile PDF: `latexmk -pdf -interaction=nonstopmode presentation.tex`
-3. Export PNGs: `python3 export_slides.py`
-4. Build PPTX: `python3 slides_to_pptx.py`
+1. Edit `presentation.tex` (with a `\note{...}` after every `\end{frame}`).
+2. Compile PDF: `latexmk -pdf -interaction=nonstopmode presentation.tex`.
+3. Build PPTX: `python3 beamer_to_pptx.py presentation.tex`.
 
-Always recompile the PDF after .tex changes before re-exporting images or PPTX.
+Always recompile the PDF after `.tex` changes before rebuilding the PPTX - the converter uses the PDF for high-fidelity cropping of tables and TikZ.

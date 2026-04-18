@@ -1,3 +1,4 @@
 # System: latexmk, pdflatex (texlive)
 PyMuPDF>=1.23.0
 python-pptx>=1.0.0
+Pillow>=10.0.0
