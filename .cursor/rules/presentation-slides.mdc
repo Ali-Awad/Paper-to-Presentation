@@ -9,10 +9,12 @@ alwaysApply: true
 ## Project layout
 
 - `presentation.tex` - main Beamer source. `\graphicspath` is set to `{Extracted_figures/}{Assets/}` so figures can be referenced by filename only.
+- `Paper_files/` - the paper being presented (PDF / tex / supplementary). **User-populated; starts empty.** Never `\includegraphics` directly from here - extract the needed figure into `Extracted_figures/` first.
+- `Extracted_figures/` - **dual-purpose folder, starts empty**:
+  - Figures the user pulls from the paper for use on slides - always save paper figures here, not at the repo root.
+  - Auto-cropped TikZ/table PNGs written by `beamer_to_pptx.py` as `slide_content_<N>.png` (git-ignored).
 - `Assets/` - logo, banner, and any reusable graphics. The footer logo defaults to `Assets/logo.jpg`.
-- `Extracted_figures/` - figures pulled from the paper for use on slides. Always save paper figures here, not at the repo root.
-- `Paper_files/` - reference paper PDF / tex / supplementary material. Do not `\includegraphics` directly from here; extract the needed figure into `Extracted_figures/` first.
-- `beamer_to_pptx.py` - single-script converter: `.tex` (+ optional `.pdf`) into an editable `.pptx`.
+- `beamer_to_pptx.py` - single-script converter: `.tex` (+ optional `.pdf`) into an editable `.pptx`. Writes its crop output into `Extracted_figures/`, not a separate folder.
 
 ## Formatting
 

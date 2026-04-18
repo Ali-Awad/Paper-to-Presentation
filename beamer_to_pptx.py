@@ -9,7 +9,9 @@ for slides containing TikZ, tables, or other complex LaTeX that cannot be
 directly translated to PowerPoint objects. When a slide uses these elements,
 the corresponding PDF page is clip-rasterized around the element's own
 vector/image bounding box so that surrounding captions or bullet text are
-not pulled into the extracted image.
+not pulled into the extracted image. The cropped PNGs are written to the
+``Extracted_figures/`` folder next to the .tex file (as ``slide_content_N.png``)
+alongside any figures you have manually placed there from the paper.
 
 Speaker notes (``\\note{...}`` after a frame) and a footer logo are enabled
 by default. The logo is auto-detected from the .tex (any ``\\includegraphics``
@@ -740,7 +742,7 @@ def build_pptx(tex_path, pdf_path=None, output_path=None):
         output_path = os.path.join(base_dir,
             os.path.splitext(os.path.basename(tex_path))[0] + '_editable.pptx')
 
-    fallback_dir = os.path.join(base_dir, '_fallback_images')
+    fallback_dir = os.path.join(base_dir, 'Extracted_figures')
     if pdf_path:
         os.makedirs(fallback_dir, exist_ok=True)
 

@@ -14,7 +14,9 @@
 # presentation.pdf
 
 # Export output
-_fallback_images/
+# Auto-generated TikZ/table crops written by beamer_to_pptx.py
+# (kept out of git; user-curated figures in Extracted_figures/ are tracked)
+Extracted_figures/slide_content_*.png
 *.pptx
 
 # Python
