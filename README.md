@@ -2,16 +2,23 @@
 
 ![Paper to Presentation](Assets/banner.png)
 
-Turn a research paper into an editable PowerPoint presentation in one command. This repo bundles a clean **LaTeX Beamer** template (16:9) with a Python converter (`beamer_to_pptx.py`) that rebuilds each slide as native PowerPoint objects - preserving speaker notes, the footer logo, and tightly-cropped figures pulled straight from your paper. The visual style is inspired by the [Michigan Technological University](https://www.mtu.edu/) PowerPoint template.
+Turn a research paper into an editable PowerPoint presentation in one prompt. This repo bundles a clean **LaTeX Beamer** template (16:9), a Python converter (`beamer_to_pptx.py`), and Cursor rules that let the coding agent do the heavy lifting: read your paper, extract its figures, write the slide narrative, and produce both a PDF and an editable PPTX. The visual style is inspired by the [Michigan Technological University](https://www.mtu.edu/) PowerPoint template.
 
-The workflow in one line: drop your paper **and** any figure files you pull out of it into `Paper_files/`, write the narrative in `presentation.tex` (reference figures by **filename only**), run the converter, and hand the `.pptx` off to co-authors who don't use LaTeX. The converter then copies every used figure into `Extracted_figures/` for you; you do not need to maintain that folder by hand.
+## The one-line workflow
+
+1. **You** drop the paper into `Paper_files/`.
+2. **You** tell the Cursor agent *"generate the slides"*.
+3. **The agent** reads the paper, extracts the figures it needs into `Extracted_figures/`, edits `presentation.tex`, compiles the PDF, and builds the editable PPTX.
+
+You never have to hand-extract figures from the paper or hand-copy files between folders. That division of labor is encoded in `.cursor/rules/presentation-slides.mdc` so Cursor follows it every time.
 
 ## Features
 
-- **Paper-centric layout**: dedicated folders for the source paper (`Paper_files/`), extracted figures (`Extracted_figures/`), and reusable assets (`Assets/`)
-- **Automatic figure collection**: drop your figures anywhere on the `\graphicspath` (e.g. alongside the paper in `Paper_files/`) and the converter copies every `\includegraphics` it encounters into `Extracted_figures/` for you - no manual file shuffling
-- **One-step conversion** to an editable PPTX with `beamer_to_pptx.py` - no image-flattening, each slide is a real PowerPoint slide with real bullets, titles, and textboxes
-- **Smart table / TikZ cropping** driven by the PDF's own vector primitives, so figures extracted from Beamer pages don't include surrounding captions or bullet text
+- **Paper-centric layout**: dedicated folders for the source paper (`Paper_files/`), agent-extracted figures (`Extracted_figures/`), and reusable deck assets (`Assets/`)
+- **Agent-driven figure extraction**: you drop the paper, the agent pulls out the figures it wants to use and saves them into `Extracted_figures/` with readable filenames
+- **Automatic figure collection on top**: whatever the agent misses, `beamer_to_pptx.py` still copies every `\includegraphics` source into `Extracted_figures/` as a safety net
+- **One-step PPTX conversion** via `beamer_to_pptx.py` - each slide is a real PowerPoint slide with real bullets, titles, and textboxes (no image-flattening)
+- **Smart table / TikZ cropping** driven by the PDF's own vector primitives, so extracted Beamer regions don't include surrounding captions or bullet text
 - **Speaker notes ON by default** via `\note{...}` after each frame, carried into the PPTX Notes pane
 - **Footer logo ON by default**, auto-discovered from `Assets/`
 - 16:9 widescreen layout with generous margins and gold accent bullets
@@ -24,38 +31,26 @@ The workflow in one line: drop your paper **and** any figure files you pull out 
 
 ```
 .
-|- presentation.tex          # Main Beamer template
-|- presentation.pdf          # Compiled PDF (output of latexmk)
+|- presentation.tex          # Main Beamer template (agent edits this)
+|- presentation.pdf          # Compiled PDF (latexmk output)
 |- beamer_to_pptx.py         # LaTeX -> editable PPTX converter
 |- requirements.txt          # Python deps (PyMuPDF, python-pptx, Pillow)
-|- Paper_files/              # YOU drop your paper here (starts empty)
-|- Extracted_figures/        # CONVERTER writes here: copies of every figure used + TikZ/table crops (starts empty)
+|- Paper_files/              # YOU drop the paper here (starts empty)
+|- Extracted_figures/        # AGENT + CONVERTER write here (starts empty)
 |- Assets/                   # Logo, banner, and reusable graphics
 |   |- logo.jpg
 |   `- banner.png
-`- .cursor/rules/            # Optional: Cursor project rules
+`- .cursor/rules/            # Cursor rules that pin the workflow
 ```
 
-Two of these folders ship **empty on purpose**:
+Two folders ship **empty on purpose**:
 
-- `Paper_files/` - **you** put your paper here before you start. Drop the source PDF (and any `.tex` / `.bib` / supplementary you have) into it, along with any figure files you've pulled out of the paper (PNG / PDF / JPG). Keeping paper + figures together means you can reference them immediately from `presentation.tex` without moving anything.
-- `Extracted_figures/` - **populated by the converter, not by you**. Every time you run `beamer_to_pptx.py`, the script:
-  - walks every `\includegraphics{...}` in `presentation.tex`,
-  - resolves each one via `\graphicspath` (so figures in `Paper_files/` are found), and
-  - **copies the source file into `Extracted_figures/`** if it isn't already there.
+- `Paper_files/` - **you** drop your paper here before you ask for slides. The source PDF is all that's strictly required; if you also have the paper's `.tex` / `.bib` / supplementary, drop those too so the agent has more to work with. You do **not** need to pre-extract figures.
+- `Extracted_figures/` - **populated by the agent and the converter, not by you**:
+  - When you ask Cursor to generate the slides, the agent reads your paper from `Paper_files/` and saves the figures it plans to use into this folder with descriptive filenames (e.g. `architecture.png`, `results_table.png`).
+  - When `beamer_to_pptx.py` runs, it also copies every `\includegraphics` source file it encounters into this folder - belt-and-braces, so nothing is missed - and writes auto-cropped TikZ/table PNGs here as `slide_content_<N>.png`. Auto-cropped filenames are git-ignored; agent-extracted figures are tracked.
 
-  It also saves the auto-cropped TikZ/table PNGs here as `slide_content_<N>.png`. So after conversion, `Extracted_figures/` is a canonical snapshot of every figure actually used in the deck - easy to share, archive, or review. Auto-cropped filenames are git-ignored; your own figures are tracked.
-
-`\graphicspath{{Extracted_figures/}{Paper_files/}{Assets/}}` is set in the template: the first run picks figures up from `Paper_files/` and copies them to `Extracted_figures/`; subsequent runs prefer the copies. Either way, you write `\includegraphics{figure1}` with no path prefix.
-
-### Where your figure files live
-
-In `presentation.tex` you reference figures by **filename only** (e.g. `figure1`); LaTeX finds the file using `\graphicspath` in the template.
-
-- **Start in `Paper_files/`** - that is where you should keep the paper PDF and any figure files you export or save as separate files (PNG, JPG, PDF, and so on).
-- **After you run the converter,** copies of the figures you actually use also show up in `Extracted_figures/`. If you are looking for a file and it is not there yet, it should still be in `Paper_files/`.
-- **`Assets/`** holds the logo, banner, and other reusable deck graphics, not the figures from your paper.
-- **Figures that exist only inside the paper PDF** are not pulled out for you. Export or screenshot them to a file in `Paper_files/` (or add another directory to `\graphicspath`) before you can `\includegraphics` them by name.
+`\graphicspath{{Extracted_figures/}{Paper_files/}{Assets/}}` is set in the template: `Extracted_figures/` is searched first (so agent-extracted and converter-copied figures are found immediately), then `Paper_files/`, then `Assets/`. Either way, you write `\includegraphics{figure1}` with no path prefix.
 
 ## Installation
 
@@ -95,18 +90,29 @@ cd paper-to-presentation
 pip install -r requirements.txt
 ```
 
-Then, in order:
+Then:
 
-1. **Put the paper and its figures into `Paper_files/`** - this folder starts empty. Drop the source PDF, any `.tex` / `.bib` / supplementary files, **and any figure files you pull out of the paper** (PNG / PDF / JPG) here. Keeping them together means the next step can reference figures by filename alone.
-2. **Put your institution logo in `Assets/`** as `logo.jpg` (or `logo.png`) - a placeholder logo is already shipped; replace it with your own.
-3. **Edit `presentation.tex`**: update title / author / date and reference your figures with `\includegraphics{figure1}` (no path needed - `\graphicspath` searches `Paper_files/` for you). Save the file; LaTeX Workshop compiles the PDF automatically.
-4. **Build the PPTX**:
+1. **Drop the paper into `Paper_files/`.** That folder starts empty. Put the paper PDF (and any `.tex` / `.bib` / supplementary you have) there. You do not need to pre-extract figures - the agent does that in the next step.
+2. **(Optional) put your institution logo in `Assets/`** as `logo.jpg` or `logo.png` - a placeholder logo ships with the repo; replace it with your own.
+3. **Ask the Cursor agent to generate the slides.** A one-liner like "generate the slides from the paper I just dropped in `Paper_files/`" is enough. The agent will:
+   - read the paper (and any accompanying source) from `Paper_files/`,
+   - extract the figures it wants to use into `Extracted_figures/`,
+   - update `presentation.tex` (title, author, date, body frames, `\note{...}` per frame),
+   - compile the PDF with `latexmk -pdf -interaction=nonstopmode presentation.tex`,
+   - build the editable PPTX with `python3 beamer_to_pptx.py presentation.tex`.
+
+The outputs are `presentation.pdf` and `presentation_editable.pptx` alongside the `.tex`.
+
+### Running the toolchain yourself
+
+If you'd rather drive the build manually (e.g., after editing `presentation.tex`):
 
 ```bash
+latexmk -pdf -interaction=nonstopmode presentation.tex
 python3 beamer_to_pptx.py presentation.tex
 ```
 
-That single command produces `presentation_editable.pptx` alongside the `.tex`. It also **copies every referenced figure into `Extracted_figures/` automatically** (so you never have to move files by hand) and writes any auto-cropped TikZ/table images there as `slide_content_<N>.png` (git-ignored). The compiled PDF is auto-detected from the same basename when present, which enables high-fidelity cropping for TikZ and tables.
+The converter auto-detects `presentation.pdf` from the same basename (required for high-fidelity TikZ / table cropping).
 
 ## How to modify the template
 
@@ -129,17 +135,17 @@ The logo is on by default and is read from `Assets/logo.jpg`.
 - To use a different path or filename, edit the `\renewcommand{\mylogo}{...}` line in the preamble.
 - To remove the logo entirely, comment out the `\renewcommand{\mylogo}` line.
 
-The converter will auto-discover any `\includegraphics` path containing `logo`, and falls back to `Assets/logo.jpg` / `Assets/logo.png` if nothing is found in the `.tex`.
+The converter auto-discovers any `\includegraphics` path containing `logo`, and falls back to `Assets/logo.jpg` / `Assets/logo.png` if nothing is found in the `.tex`.
 
 ### Figures from the paper
 
-Save any figure you pull out of the paper into `Paper_files/` (alongside the paper itself). Because `\graphicspath` lists `Paper_files/`, you reference the figure by filename only:
+You should not need to touch figures by hand. The agent extracts them from the paper PDF into `Extracted_figures/` and references them from `presentation.tex` by **filename only**:
 
 ```tex
 \includegraphics[width=\linewidth,height=0.58\textheight,keepaspectratio]{figure1}
 ```
 
-When you run `beamer_to_pptx.py`, the converter **copies every referenced figure into `Extracted_figures/` for you** - you don't copy them yourself. On subsequent runs LaTeX will find the copy in `Extracted_figures/` first (it's earlier in `\graphicspath`), so you can safely delete the original from `Paper_files/` once you're happy with the deck if you want a tighter archive.
+Because `\graphicspath` lists `Extracted_figures/` first, LaTeX finds the file without a path prefix. If you'd like to swap in a different figure, just save it under `Extracted_figures/` (or `Paper_files/`) with the same basename.
 
 ### Adding slides
 
@@ -185,7 +191,7 @@ latexmk -pdf -interaction=nonstopmode presentation.tex
 For every `\includegraphics{figure}` it encounters, it:
 
 - resolves the path against `\graphicspath` (searching `Extracted_figures/`, then `Paper_files/`, then `Assets/`, then the repo root);
-- if the resolved file lives outside `Extracted_figures/`, **copies it into `Extracted_figures/`** (no overwrite if an identically-sized copy already exists);
+- if the resolved file lives outside `Extracted_figures/`, **copies it into `Extracted_figures/`** (no overwrite if an identically-sized copy already exists) - this acts as a safety net on top of whatever the agent already extracted;
 - embeds the copy in the generated slide.
 
 The footer logo is treated as chrome and is **not** copied.
@@ -217,8 +223,7 @@ The PPTX output works in PowerPoint, Google Slides, or Keynote.
 | `presentation.pdf` | Compiled PDF, also fed to the converter for fallback rasterization |
 | `beamer_to_pptx.py` | Single-script LaTeX -> editable PPTX converter |
 | `requirements.txt` | Python dependencies (PyMuPDF, python-pptx, Pillow) |
-| `Paper_files/` | Paper + its figures (PDF / tex / PNG / JPG / supplementary). **Starts empty - you fill it.** |
-| `Extracted_figures/` | Canonical copies of every figure actually used in the deck + auto-cropped TikZ/table PNGs. **Populated by the converter, not by you.** |
+| `Paper_files/` | Paper PDF + optional `.tex` / `.bib` / supplementary. **Starts empty - you drop the paper here.** |
+| `Extracted_figures/` | Figures the Cursor agent extracts from the paper, plus copies made by the converter and auto-cropped TikZ/table PNGs. **Starts empty - populated by the agent and the converter, not by you.** |
 | `Assets/` | Logo, banner, and reusable graphics |
-| `AGENTS.md` | Optional: stricter formatting notes aimed at **automated editors**; skip it if you only work in the `.tex` by hand |
-| `.cursor/rules/` | Optional Cursor project rules; safe to ignore if you do not use Cursor |
+| `.cursor/rules/` | Cursor rules that pin the "drop paper, ask for slides" workflow |

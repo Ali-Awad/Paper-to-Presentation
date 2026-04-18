@@ -13,18 +13,18 @@ not pulled into the extracted image.
 
 Figure collection
 -----------------
-Every ``\\includegraphics`` path referenced in the .tex is resolved against
+The expected workflow is: the user drops the paper into ``Paper_files/``,
+the Cursor agent extracts the figures it wants into ``Extracted_figures/``
+(as part of slide generation), and this converter then runs on
+``presentation.tex``. As a safety net on top of the agent's extraction,
+every ``\\includegraphics`` path referenced in the .tex is resolved against
 the ``\\graphicspath`` entries in the .tex (typically
 ``{Extracted_figures/}{Paper_files/}{Assets/}``) and **copied into**
-``Extracted_figures/`` if it isn't already there. Source files the author
-places **next to the paper** live in ``Paper_files/``; the slide text only
-holds the basename. **For humans and agents:** if a name is missing from
-``Extracted_figures/``, look in ``Paper_files/`` for ``*.png`` / ``*.jpg`` /
-``*.pdf`` with that stem - do not assume figures exist only "in the .tex
-prose." After conversion, ``Extracted_figures/`` holds a canonical copy of
-every figure used. Auto-cropped TikZ/table PNGs are written as
-``slide_content_<N>.png``. The footer logo (``Assets/logo.jpg``) is *not*
-copied - it's chrome, not slide content.
+``Extracted_figures/`` if it isn't already there. After conversion,
+``Extracted_figures/`` holds a canonical copy of every figure used.
+Auto-cropped TikZ/table PNGs are written as ``slide_content_<N>.png``.
+The footer logo (``Assets/logo.jpg``) is *not* copied - it's chrome, not
+slide content.
 
 Speaker notes (``\\note{...}`` after a frame) and a footer logo are enabled
 by default. The logo is auto-detected from the .tex (any ``\\includegraphics``

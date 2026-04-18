@@ -6,65 +6,153 @@ alwaysApply: true
 
 # Presentation Slide Rules
 
-## For agents (figure discovery)
+## Generation workflow (what the agent does when asked to "generate the slides")
 
-- **Figures are not "text only"** - `presentation.tex` references them by **filename** via `\includegraphics{...}`. The search order is set by `\graphicspath` in the preamble: `Extracted_figures/`, then `Paper_files/`, then `Assets/`, then the repo root.
-- **When a figure seems missing** - list or glob `Paper_files/` for `*.png`, `*.jpg`, `*.pdf` (and similar). The author is expected to place paper-derived figures **next to the paper** in `Paper_files/`, not only in the `.tex` prose. Do not assume the only source of truth is the written slide text; the file system in `Paper_files/` is canonical for "what we have from the paper."
-- **After `beamer_to_pptx.py` runs** - copies of used figures land in `Extracted_figures/`. If that folder is empty or incomplete, the originals are still under `Paper_files/`.
-- **Embedded images inside the paper PDF** are not auto-extracted; the human (or a dedicated export step) must save them as files into `Paper_files/` before they can be `\includegraphics`d by filename.
+The user is only expected to drop **paper files** (the source PDF, and
+optionally `.tex` / `.bib` / supplementary material) into `Paper_files/`.
+Everything else is the agent's job. When the user asks you to generate,
+update, or rebuild the slides, you **must** run this full pipeline, in order:
+
+1. **Read `Paper_files/`.** Inventory what the user dropped. The paper PDF is
+   the canonical source of truth for content and figures. Read it (and any
+   accompanying `.tex` source if present) to understand the paper's
+   structure, claims, and which figures matter for the talk.
+2. **Extract the figures the slides will need into `Extracted_figures/`.**
+   Do not ask the user to pre-extract figures. Use PyMuPDF (already a
+   dependency, see `requirements.txt`) or equivalent to pull the relevant
+   embedded images / figure regions out of the paper PDF and save them as
+   PNG / JPG files in `Extracted_figures/` with descriptive filenames
+   (e.g. `architecture.png`, `results_table.png`). If the user **did** drop
+   pre-extracted figure files into `Paper_files/`, prefer those and copy
+   them into `Extracted_figures/` as well. After this step,
+   `Extracted_figures/` holds everything the deck needs.
+3. **Modify `presentation.tex`.** Edit the title / author / date and fill
+   the body frames with slide content that reflects the paper. Reference
+   figures by **filename only** via `\includegraphics{figure_name}`
+   (no path prefix); `\graphicspath` takes care of the lookup. Keep a
+   `\note{...}` on the line immediately after every `\end{frame}`.
+4. **Compile the PDF.** Run
+   `latexmk -pdf -interaction=nonstopmode presentation.tex`.
+5. **Build the PPTX.** Run `python3 beamer_to_pptx.py presentation.tex`.
+   The converter reads the just-compiled PDF for high-fidelity cropping
+   of TikZ / tables, and it *also* copies any still-uncopied figures into
+   `Extracted_figures/` as a safety net.
+
+Always recompile the PDF (step 4) **after** any `.tex` edit and **before**
+rebuilding the PPTX (step 5), because the converter uses the PDF for
+high-fidelity cropping.
+
+## Figure discovery
+
+- **Figures are not "text only"** - `presentation.tex` references them by
+  **filename** via `\includegraphics{...}`. The search order is set by
+  `\graphicspath` in the preamble: `Extracted_figures/`, then
+  `Paper_files/`, then `Assets/`, then the repo root.
+- **The canonical figure store is `Extracted_figures/`.** That's where the
+  agent writes figures it pulled out of the paper PDF, and where the
+  converter copies any other referenced figures.
+- **When a figure seems missing** - check `Extracted_figures/` first. If
+  it isn't there yet, extract it from the paper PDF in `Paper_files/` and
+  save it into `Extracted_figures/`. Do not tell the user to go do that by
+  hand.
+- **If the user pre-dropped figure files in `Paper_files/`**, treat them as
+  hints about what the user considers important and copy them into
+  `Extracted_figures/` (the converter will also do this on its next run).
 
 ## Project layout
 
-- `presentation.tex` - main Beamer source. `\graphicspath` is `{Extracted_figures/}{Paper_files/}{Assets/}`, so figures are referenced by filename only and found in either the paper folder or the copies the converter makes.
-- `Paper_files/` - the paper being presented AND any figures the user pulls out of it (PDF / tex / PNG / JPG / supplementary). **User-populated; starts empty.** This is the one place the user drops figure files.
-- `Extracted_figures/` - **populated by the converter, not by the user; starts empty**:
-  - `beamer_to_pptx.py` copies every `\includegraphics` source file into this folder so the deck's figure set is self-contained and archivable.
-  - Auto-cropped TikZ/table PNGs also land here as `slide_content_<N>.png` (git-ignored).
-  - Do not instruct users to hand-copy files into this folder; the converter does it.
-- `Assets/` - logo, banner, and any reusable graphics. The footer logo defaults to `Assets/logo.jpg` and is **not** copied into `Extracted_figures/` (it's chrome, not slide content).
-- `beamer_to_pptx.py` - single-script converter: `.tex` (+ optional `.pdf`) into an editable `.pptx`. Copies referenced figures into `Extracted_figures/` and writes its TikZ/table crops there too.
+- `presentation.tex` - main Beamer source. `\graphicspath` is
+  `{Extracted_figures/}{Paper_files/}{Assets/}`, so figures are referenced
+  by filename only.
+- `Paper_files/` - **user-populated; starts empty.** The one place the user
+  drops the paper. Typically contains the paper PDF plus any optional
+  `.tex` / `.bib` / supplementary files. The user is *not* expected to
+  extract figures by hand; the agent does that.
+- `Extracted_figures/` - **agent- and converter-populated; starts empty.**
+  Holds:
+  - Figures the agent extracts from the paper PDF during slide generation.
+  - Copies of every `\includegraphics` source file the converter sees.
+  - Auto-cropped TikZ/table PNGs named `slide_content_<N>.png`
+    (git-ignored).
+  Do not instruct users to hand-copy files into this folder.
+- `Assets/` - logo, banner, and any reusable graphics. The footer logo
+  defaults to `Assets/logo.jpg` and is **not** copied into
+  `Extracted_figures/` (it's chrome, not slide content).
+- `beamer_to_pptx.py` - single-script converter: `.tex` (+ optional `.pdf`)
+  into an editable `.pptx`. Copies referenced figures into
+  `Extracted_figures/` and writes its TikZ/table crops there too.
 
 ## Formatting
 
-- **Bold as leading labels only**: Use `\textbf{Label}:` at the start of bullets. Never bold mid-sentence.
-- **Consistent bold**: Every bullet in a slide must follow the same pattern. If one bullet has a bold label, all bullets on that slide should too.
-- **No em dashes**: Do not use `---` (em dash). Use commas, semicolons, or colons instead.
+- **Bold as leading labels only**: Use `\textbf{Label}:` at the start of
+  bullets. Never bold mid-sentence.
+- **Consistent bold**: Every bullet in a slide must follow the same
+  pattern. If one bullet has a bold label, all bullets on that slide
+  should too.
+- **No em dashes**: Do not use `---` (em dash). Use commas, semicolons, or
+  colons instead.
 
 ## Content
 
-- **Tight bullets (AI editing `presentation.tex`)**: You **must** keep each body `\item` **short** (one line on 16:9 when possible; no paragraph-style items). You **must** put paragraphs of detail in `\note{...}` after `\end{frame}`, or split into sub-bullets. Long bullets mean the slide is doing the speaker's job; the slide headlines, the notes explain.
-- **Concise bullets**: Keep slides readable. If a slide feels overwhelming, trim content or split into sub-bullets.
-- **Sub-bullets for multi-part points**: Break compound ideas into sub-bullets rather than one long sentence.
-- **Speaker notes are default**: Every frame must be followed by a `\note{...}` block on the line immediately after `\end{frame}`. The converter reads these and writes them to the PPTX Notes pane.
-- **Speaker notes as bullets**: Use bullet-like phrasing in `\note{...}` when transitioning between topics or when it improves clarity.
-- **Explain abbreviations**: When an abbreviation appears in `\note{...}`, spell it out in parentheses on first use (e.g., "CNN (Convolutional Neural Network)").
-- **Avoid overly bold claims**: Soften absolute language (e.g., "do not target" instead of "none target").
-- **Lead with top results**: In results slides, highlight the best-performing model first, not baselines or outliers.
-- **Include key variable comparisons** on each results slide where relevant (e.g., frame rate differences).
-- **Remove distracting outliers**: Omit odd or unrepresentative data points that distract from the main message.
+- **Tight bullets (when you edit `presentation.tex`)**: You **must** keep
+  each body `\item` **short** (one line on 16:9 when possible; no
+  paragraph-style items). You **must** put paragraphs of detail in
+  `\note{...}` after `\end{frame}`, or split into sub-bullets. Long
+  bullets mean the slide is doing the speaker's job; the slide headlines,
+  the notes explain.
+- **Concise bullets**: Keep slides readable. If a slide feels overwhelming,
+  trim content or split into sub-bullets.
+- **Sub-bullets for multi-part points**: Break compound ideas into
+  sub-bullets rather than one long sentence.
+- **Speaker notes are default**: Every frame must be followed by a
+  `\note{...}` block on the line immediately after `\end{frame}`. The
+  converter reads these and writes them to the PPTX Notes pane.
+- **Speaker notes as bullets**: Use bullet-like phrasing in `\note{...}`
+  when transitioning between topics or when it improves clarity.
+- **Explain abbreviations**: When an abbreviation appears in `\note{...}`,
+  spell it out in parentheses on first use (e.g., "CNN (Convolutional
+  Neural Network)").
+- **Avoid overly bold claims**: Soften absolute language (e.g., "do not
+  target" instead of "none target").
+- **Lead with top results**: In results slides, highlight the
+  best-performing model first, not baselines or outliers.
+- **Include key variable comparisons** on each results slide where
+  relevant (e.g., frame rate differences).
+- **Remove distracting outliers**: Omit odd or unrepresentative data
+  points that distract from the main message.
 
 ## Layout
 
-- **Image beside text**: Use `\begin{columns}[T]` with left column ~0.50\textwidth (text) and right column ~0.47\textwidth (figure). Do not place figures below text.
-- **Text above footer**: Keep body text from overlapping the footer. Use `\vspace{-0.4em}` at frame start; limit figure height (e.g., `height=0.58\textheight`); use `{\small ...}` for dense slides.
-- **Figures by filename only**: Because of `\graphicspath`, write `\includegraphics{figure1}` rather than `\includegraphics{Paper_files/figure1}` or `\includegraphics{Extracted_figures/figure1}`. Let the converter handle the copy.
+- **Image beside text**: Use `\begin{columns}[T]` with left column
+  ~0.50\textwidth (text) and right column ~0.47\textwidth (figure). Do
+  not place figures below text.
+- **Text above footer**: Keep body text from overlapping the footer. Use
+  `\vspace{-0.4em}` at frame start; limit figure height (e.g.,
+  `height=0.58\textheight`); use `{\small ...}` for dense slides.
+- **Figures by filename only**: Because of `\graphicspath`, write
+  `\includegraphics{figure1}` rather than
+  `\includegraphics{Paper_files/figure1}` or
+  `\includegraphics{Extracted_figures/figure1}`.
 
 ## Style
 
-- **Sub-bullet color**: All bullet levels must use the same accent color. Override Beamer defaults if needed.
-- **Logo default**: The footer logo is enabled by default (`\renewcommand{\mylogo}{...}` uncommented) and points to `Assets/logo.jpg`. Prefer JPG for the footer logo when available.
-- **Slide naming**: Use descriptive, audience-friendly titles (e.g., "Situation recognition" over "Factor prediction").
+- **Sub-bullet color**: All bullet levels must use the same accent color.
+  Override Beamer defaults if needed.
+- **Logo default**: The footer logo is enabled by default
+  (`\renewcommand{\mylogo}{...}` uncommented) and points to
+  `Assets/logo.jpg`. Prefer JPG for the footer logo when available.
+- **Slide naming**: Use descriptive, audience-friendly titles (e.g.,
+  "Situation recognition" over "Factor prediction").
 
 ## Tables and TikZ
 
-- The converter falls back to image rasterization for `\begin{tabular}` and `\begin{tikzpicture}`.
-- Cropping is driven by the PDF's vector drawings (booktabs rule lines, TikZ paths) and embedded image rects, not by whitespace heuristics. Keep surrounding captions / bullet text out of the same horizontal band as the table so the clip stays tight.
-- When a table shares a slide with bullet text, the converter snaps the crop to the table's bottom rule line - do not place explanatory prose immediately under a table that is meant to be extracted as an image; put it in `\note{...}` or in a separate frame.
-
-## Workflow
-
-1. Edit `presentation.tex` (with a `\note{...}` after every `\end{frame}`).
-2. Compile PDF: `latexmk -pdf -interaction=nonstopmode presentation.tex`.
-3. Build PPTX: `python3 beamer_to_pptx.py presentation.tex`.
-
-Always recompile the PDF after `.tex` changes before rebuilding the PPTX - the converter uses the PDF for high-fidelity cropping of tables and TikZ.
+- The converter falls back to image rasterization for `\begin{tabular}`
+  and `\begin{tikzpicture}`.
+- Cropping is driven by the PDF's vector drawings (booktabs rule lines,
+  TikZ paths) and embedded image rects, not by whitespace heuristics.
+  Keep surrounding captions / bullet text out of the same horizontal band
+  as the table so the clip stays tight.
+- When a table shares a slide with bullet text, the converter snaps the
+  crop to the table's bottom rule line - do not place explanatory prose
+  immediately under a table that is meant to be extracted as an image;
+  put it in `\note{...}` or in a separate frame.

@@ -3,14 +3,14 @@
 \usetheme{default}
 
 % ============ ASSET SEARCH PATHS ============
-% Keep figures alongside the paper in Paper_files/ while you draft the talk.
-% When you run beamer_to_pptx.py it copies every referenced figure into
-% Extracted_figures/ automatically, so you never have to move files by hand.
-% Extracted_figures/ is searched first so repeat runs pick up the copied
-% versions; Paper_files/ is searched next for the first conversion; Assets/
-% holds the logo, banner, and other reusable graphics.
-% (For editors/agents: paper figures on disk are under Paper_files/ by
-% filename; the slide only references the basename, not a full path.)
+% Workflow: the user drops the paper into Paper_files/, then asks the Cursor
+% agent to generate the slides. The agent extracts the figures it needs from
+% the paper PDF into Extracted_figures/ and references them here by filename
+% only (no path prefix). The converter (beamer_to_pptx.py) also copies any
+% other \includegraphics sources into Extracted_figures/ as a safety net.
+% Search order: Extracted_figures/ first (agent + converter output),
+% Paper_files/ next (fallback for anything the user pre-dropped), Assets/
+% last (logo, banner, reusable deck graphics).
 \graphicspath{{Extracted_figures/}{Paper_files/}{Assets/}}
 
 % Margins
@@ -147,10 +147,11 @@
     \end{column}
     \begin{column}{0.47\textwidth}
       \centering
-      % Replace the rule placeholder below with a figure from Extracted_figures/, e.g.:
+      % The agent will replace the rule placeholder below with a figure it
+      % extracted from the paper PDF into Extracted_figures/, e.g.:
       % \includegraphics[width=\linewidth,height=0.58\textheight,keepaspectratio]{figure1}
       \rule{0.8\linewidth}{0.58\textheight}\\[0.5em]
-      \small\textit{(Replace with your figure from Extracted\_figures/)}
+      \small\textit{(Agent replaces this with a figure from Extracted\_figures/)}
     \end{column}
   \end{columns}
 \end{frame}
