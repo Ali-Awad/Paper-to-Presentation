@@ -20,7 +20,8 @@ Extracted_figures/slide_content_*.png
 *.pptx
 
 # Python
-.venv_pptx/
+.venv/
+.venv_*/
 __pycache__/
 *.pyc
 .pytest_cache/

@@ -2,15 +2,8 @@
 \documentclass[aspectratio=169,11pt]{beamer}
 \usetheme{default}
 
-% ============ ASSET SEARCH PATHS ============
-% Workflow: the user drops the paper into Paper_files/, then asks the Cursor
-% agent to generate the slides. The agent extracts the figures it needs from
-% the paper PDF into Extracted_figures/ and references them here by filename
-% only (no path prefix). The converter (beamer_to_pptx.py) also copies any
-% other \includegraphics sources into Extracted_figures/ as a safety net.
-% Search order: Extracted_figures/ first (agent + converter output),
-% Paper_files/ next (fallback for anything the user pre-dropped), Assets/
-% last (logo, banner, reusable deck graphics).
+% Figures live in Extracted_figures/ (the agent puts them there when it
+% generates the slides). Reference them by basename: \includegraphics{figure1}.
 \graphicspath{{Extracted_figures/}{Paper_files/}{Assets/}}
 
 % Margins
@@ -147,9 +140,7 @@
     \end{column}
     \begin{column}{0.47\textwidth}
       \centering
-      % The agent will replace the rule placeholder below with a figure it
-      % extracted from the paper PDF into Extracted_figures/, e.g.:
-      % \includegraphics[width=\linewidth,height=0.58\textheight,keepaspectratio]{figure1}
+      % Replace with: \includegraphics[width=\linewidth,height=0.58\textheight,keepaspectratio]{figure1}
       \rule{0.8\linewidth}{0.58\textheight}\\[0.5em]
       \small\textit{(Agent replaces this with a figure from Extracted\_figures/)}
     \end{column}

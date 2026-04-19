@@ -4,35 +4,24 @@
 Usage:
     python3 beamer_to_pptx.py presentation.tex [presentation.pdf] [output.pptx]
 
-The .pdf argument is optional but enables high-fidelity fallback rendering
-for slides containing TikZ, tables, or other complex LaTeX that cannot be
-directly translated to PowerPoint objects. When a slide uses these elements,
-the corresponding PDF page is clip-rasterized around the element's own
-vector/image bounding box so that surrounding captions or bullet text are
-not pulled into the extracted image.
+Each slide is rebuilt with real PowerPoint objects (titles, bullets,
+textboxes, images). TikZ / tabular regions, which have no direct PPTX
+equivalent, are clip-rasterized from the compiled PDF around the
+element's own vector/image bounding box so captions and nearby bullets
+don't leak into the image. Those crops are written to
+``Extracted_figures/slide_content_<N>.png`` at ``PDF_DPI`` (see the
+constant below).
 
-Figure collection
------------------
-The expected workflow is: the user drops the paper into ``Paper_files/``,
-the Cursor agent extracts the figures it wants into ``Extracted_figures/``
-(as part of slide generation), and this converter then runs on
-``presentation.tex``. As a safety net on top of the agent's extraction,
-every ``\\includegraphics`` path referenced in the .tex is resolved against
-the ``\\graphicspath`` entries in the .tex (typically
-``{Extracted_figures/}{Paper_files/}{Assets/}``) and **copied into**
-``Extracted_figures/`` if it isn't already there. After conversion,
-``Extracted_figures/`` holds a canonical copy of every figure used.
-Auto-cropped TikZ/table PNGs are written as ``slide_content_<N>.png``.
-The footer logo (``Assets/logo.jpg``) is *not* copied - it's chrome, not
-slide content.
+Every ``\\includegraphics`` source the script resolves is also copied
+into ``Extracted_figures/`` if it isn't already there; the footer logo
+is treated as chrome and left alone.
 
-Speaker notes (``\\note{...}`` after a frame) and a footer logo are enabled
-by default. The logo is auto-detected from the .tex (any ``\\includegraphics``
-whose path contains ``logo``) and, failing that, from ``Assets/logo.jpg``
-or ``Assets/logo.png``.
+Speaker notes (``\\note{...}`` after a frame) are carried into the PPTX
+Notes pane. The footer logo is auto-detected from the .tex (any
+``\\includegraphics`` whose path contains ``logo``) and, failing that,
+from ``Assets/logo.jpg`` or ``Assets/logo.png``.
 
-Style settings (font, colors, sizes, footer) are configured via constants
-at the top of the file.
+Style / DPI / layout constants are at the top of this file.
 """
 
 import re
@@ -85,7 +74,7 @@ ACCENT = RGBColor(0xFF, 0xC0, 0x00)
 COL_GAP = Inches(0.25)
 COL_SPLIT = 0.45
 
-PDF_DPI = 300
+PDF_DPI = 450
 
 # =====================================================================
 # LATEX PARSER

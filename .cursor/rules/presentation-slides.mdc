@@ -6,153 +6,196 @@ alwaysApply: true
 
 # Presentation Slide Rules
 
-## Generation workflow (what the agent does when asked to "generate the slides")
+## Generation workflow
 
-The user is only expected to drop **paper files** (the source PDF, and
-optionally `.tex` / `.bib` / supplementary material) into `Paper_files/`.
-Everything else is the agent's job. When the user asks you to generate,
-update, or rebuild the slides, you **must** run this full pipeline, in order:
+The user drops the paper into `Paper_files/` and asks you to generate the
+slides. You do everything else. Run these steps in order:
 
-1. **Read `Paper_files/`.** Inventory what the user dropped. The paper PDF is
-   the canonical source of truth for content and figures. Read it (and any
-   accompanying `.tex` source if present) to understand the paper's
+0. **Set up `.venv` (first thing, every time).** If `.venv/` does not
+   already exist at the repo root, create it and install the Python
+   dependencies:
+
+   ```bash
+   python3 -m venv .venv
+   . .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+   If `.venv/` already exists, just activate it. Every subsequent `python`
+   / `pip` call in this workflow must run inside this venv.
+
+1. **Read the paper.** Inventory `Paper_files/`. The paper PDF is the
+   source of truth for both content and figures; read it (and any
+   accompanying `.tex` / `.bib` / supplementary) to understand the
    structure, claims, and which figures matter for the talk.
-2. **Extract the figures the slides will need into `Extracted_figures/`.**
-   Do not ask the user to pre-extract figures. Use PyMuPDF (already a
-   dependency, see `requirements.txt`) or equivalent to pull the relevant
-   embedded images / figure regions out of the paper PDF and save them as
-   PNG / JPG files in `Extracted_figures/` with descriptive filenames
-   (e.g. `architecture.png`, `results_table.png`). If the user **did** drop
-   pre-extracted figure files into `Paper_files/`, prefer those and copy
-   them into `Extracted_figures/` as well. After this step,
-   `Extracted_figures/` holds everything the deck needs.
-3. **Modify `presentation.tex`.** Edit the title / author / date and fill
-   the body frames with slide content that reflects the paper. Reference
-   figures by **filename only** via `\includegraphics{figure_name}`
-   (no path prefix); `\graphicspath` takes care of the lookup. Keep a
-   `\note{...}` on the line immediately after every `\end{frame}`.
-4. **Compile the PDF.** Run
-   `latexmk -pdf -interaction=nonstopmode presentation.tex`.
-5. **Build the PPTX.** Run `python3 beamer_to_pptx.py presentation.tex`.
-   The converter reads the just-compiled PDF for high-fidelity cropping
-   of TikZ / tables, and it *also* copies any still-uncopied figures into
-   `Extracted_figures/` as a safety net.
 
-Always recompile the PDF (step 4) **after** any `.tex` edit and **before**
-rebuilding the PPTX (step 5), because the converter uses the PDF for
-high-fidelity cropping.
+2. **Put the figures you will use into `Extracted_figures/`.** Use
+   PyMuPDF (`fitz`) to pull embedded images / figure regions out of the
+   paper PDF and save them as `Extracted_figures/<descriptive_name>.png`
+   (e.g. `architecture.png`, `results_table.png`). If the user also
+   dropped pre-extracted figure files into `Paper_files/`, copy those
+   into `Extracted_figures/` too. Do not ask the user to extract
+   figures; that's your job.
 
-## Figure discovery
+3. **Edit `presentation.tex`.** Update title / author / date and fill the
+   body frames. Every frame must end with `\note{...}` on the line
+   immediately after `\end{frame}`. Reference every figure as
+   `\includegraphics{<basename>}` with **no** path prefix and **no**
+   extension.
 
-- **Figures are not "text only"** - `presentation.tex` references them by
-  **filename** via `\includegraphics{...}`. The search order is set by
-  `\graphicspath` in the preamble: `Extracted_figures/`, then
-  `Paper_files/`, then `Assets/`, then the repo root.
-- **The canonical figure store is `Extracted_figures/`.** That's where the
-  agent writes figures it pulled out of the paper PDF, and where the
-  converter copies any other referenced figures.
-- **When a figure seems missing** - check `Extracted_figures/` first. If
-  it isn't there yet, extract it from the paper PDF in `Paper_files/` and
-  save it into `Extracted_figures/`. Do not tell the user to go do that by
-  hand.
-- **If the user pre-dropped figure files in `Paper_files/`**, treat them as
-  hints about what the user considers important and copy them into
-  `Extracted_figures/` (the converter will also do this on its next run).
+4. **Compile the PDF.**
 
-## Project layout
+   ```bash
+   latexmk -pdf -interaction=nonstopmode presentation.tex
+   ```
 
-- `presentation.tex` - main Beamer source. `\graphicspath` is
-  `{Extracted_figures/}{Paper_files/}{Assets/}`, so figures are referenced
-  by filename only.
-- `Paper_files/` - **user-populated; starts empty.** The one place the user
-  drops the paper. Typically contains the paper PDF plus any optional
-  `.tex` / `.bib` / supplementary files. The user is *not* expected to
-  extract figures by hand; the agent does that.
-- `Extracted_figures/` - **agent- and converter-populated; starts empty.**
-  Holds:
-  - Figures the agent extracts from the paper PDF during slide generation.
-  - Copies of every `\includegraphics` source file the converter sees.
-  - Auto-cropped TikZ/table PNGs named `slide_content_<N>.png`
-    (git-ignored).
-  Do not instruct users to hand-copy files into this folder.
-- `Assets/` - logo, banner, and any reusable graphics. The footer logo
-  defaults to `Assets/logo.jpg` and is **not** copied into
-  `Extracted_figures/` (it's chrome, not slide content).
-- `beamer_to_pptx.py` - single-script converter: `.tex` (+ optional `.pdf`)
-  into an editable `.pptx`. Copies referenced figures into
-  `Extracted_figures/` and writes its TikZ/table crops there too.
+5. **Build the PPTX.**
+
+   ```bash
+   python3 beamer_to_pptx.py presentation.tex
+   ```
+
+   Always recompile the PDF (step 4) **before** rebuilding the PPTX
+   (step 5): the converter uses the PDF for high-fidelity TikZ / table
+   cropping.
+
+6. **Self-check against the rules in this file.** Before reporting
+   "done" to the user, run the quick verification pass below. Fix
+   anything that fails, then recompile (step 4) and rebuild (step 5)
+   as needed.
+
+## Post-generation verification
+
+After step 5, confirm all of the following. If any check fails, fix
+the `.tex`, rerun steps 4-5, and re-check. Only then tell the user
+the deck is ready.
+
+1. **Outputs exist.** `presentation.pdf` and `presentation_editable.pptx`
+   are on disk at the repo root (verify with `ls`, not `Glob`).
+2. **Every figure reference resolves.** For each `\includegraphics{name}`
+   in `presentation.tex`, confirm `Extracted_figures/name.{png,jpg,pdf}`
+   exists on disk. Use `ls Extracted_figures/` (not `Glob`).
+3. **Every frame has a `\note{...}`** on the line right after
+   `\end{frame}`. Grep for `\end{frame}` and eyeball the next line.
+4. **No em dashes.** `grep -n -- '---' presentation.tex` should return
+   nothing outside `%` comments.
+5. **Bold is label-only.** `\textbf{...}` should appear only at the
+   start of a bullet, never mid-sentence.
+6. **No wide text-only slides.** Any frame without a figure must either
+   constrain its text column (`minipage` / single-column `columns`
+   ~0.65-0.70\textwidth) or pair bullets with a figure, or be split.
+   No edge-to-edge bullet lists on otherwise empty slides.
+7. **No dumped dense tables.** Any table with many rows / columns /
+   long numbers must be summarized, trimmed to key rows, or split
+   across slides; full details belong in `\note{...}`.
+8. **Build cleanliness.** `latexmk` finished without errors;
+   `beamer_to_pptx.py` ran without raising; the PPTX opens and each
+   slide has content.
+
+Report the result briefly to the user: "Generated N slides, verified
+against rules 1-8." If any rule was relaxed deliberately (e.g., the
+paper genuinely has a two-cell table worth dumping), say so explicitly.
+
+## Verify files with the shell, not just `Glob`
+
+`Glob` and `Grep` respect `.gitignore` / `.cursorignore`, so a file that
+exists on disk (especially a large binary like a JPEG / PNG / PDF under
+`Paper_files/`) may return zero matches. Before concluding a figure is
+missing, confirm with `ls` / `find` in the shell. The shell is ground
+truth; editor search is filtered. If a file shows up in `ls` but not in
+`Glob`, look for an ignore rule that's hiding it, don't treat the empty
+search result as "file doesn't exist."
+
+## The only figure rule
+
+Before you write `\includegraphics{name}` anywhere in `presentation.tex`,
+make sure a file `Extracted_figures/name.png` (or `.jpg` / `.pdf`) exists.
+If it doesn't, create it in step 2. No other folder matters for figures;
+don't reason about search paths, don't reference `Paper_files/<name>`,
+don't prefix with `Extracted_figures/`. Just the basename.
+
+(`\graphicspath` and the converter's copy-in behavior exist as a safety
+net for edge cases; the agent should not depend on them.)
 
 ## Formatting
 
-- **Bold as leading labels only**: Use `\textbf{Label}:` at the start of
+- **Bold as leading labels only**: `\textbf{Label}:` at the start of
   bullets. Never bold mid-sentence.
-- **Consistent bold**: Every bullet in a slide must follow the same
-  pattern. If one bullet has a bold label, all bullets on that slide
-  should too.
-- **No em dashes**: Do not use `---` (em dash). Use commas, semicolons, or
-  colons instead.
+- **Consistent bold**: If one bullet on a slide has a bold label, all
+  bullets on that slide should.
+- **No em dashes** (`---`). Use commas, semicolons, or colons.
 
 ## Content
 
-- **Tight bullets (when you edit `presentation.tex`)**: You **must** keep
-  each body `\item` **short** (one line on 16:9 when possible; no
-  paragraph-style items). You **must** put paragraphs of detail in
-  `\note{...}` after `\end{frame}`, or split into sub-bullets. Long
-  bullets mean the slide is doing the speaker's job; the slide headlines,
-  the notes explain.
-- **Concise bullets**: Keep slides readable. If a slide feels overwhelming,
-  trim content or split into sub-bullets.
-- **Sub-bullets for multi-part points**: Break compound ideas into
-  sub-bullets rather than one long sentence.
-- **Speaker notes are default**: Every frame must be followed by a
-  `\note{...}` block on the line immediately after `\end{frame}`. The
-  converter reads these and writes them to the PPTX Notes pane.
-- **Speaker notes as bullets**: Use bullet-like phrasing in `\note{...}`
-  when transitioning between topics or when it improves clarity.
-- **Explain abbreviations**: When an abbreviation appears in `\note{...}`,
-  spell it out in parentheses on first use (e.g., "CNN (Convolutional
-  Neural Network)").
-- **Avoid overly bold claims**: Soften absolute language (e.g., "do not
-  target" instead of "none target").
-- **Lead with top results**: In results slides, highlight the
-  best-performing model first, not baselines or outliers.
-- **Include key variable comparisons** on each results slide where
-  relevant (e.g., frame rate differences).
-- **Remove distracting outliers**: Omit odd or unrepresentative data
-  points that distract from the main message.
+- **Tight bullets.** Each body `\item` must be short (one line on 16:9
+  when possible). Put paragraphs of detail in `\note{...}` or split into
+  sub-bullets.
+- **Sub-bullets for multi-part points**, not one long sentence.
+- **Speaker notes on every frame**, on the line right after
+  `\end{frame}`. The converter reads these into the PPTX Notes pane.
+- **Explain abbreviations in `\note{...}`** on first use (e.g., "CNN
+  (Convolutional Neural Network)").
+- **Soften absolute language** (e.g., "do not target" over "none
+  target").
+- **Lead with the top result** on results slides, not baselines.
+- **Include key variable comparisons** on results slides where relevant
+  (e.g., frame rate differences).
+- **Omit distracting outliers** that don't support the main message.
 
 ## Layout
 
-- **Image beside text**: Use `\begin{columns}[T]` with left column
-  ~0.50\textwidth (text) and right column ~0.47\textwidth (figure). Do
-  not place figures below text.
-- **Text above footer**: Keep body text from overlapping the footer. Use
-  `\vspace{-0.4em}` at frame start; limit figure height (e.g.,
-  `height=0.58\textheight`); use `{\small ...}` for dense slides.
-- **Figures by filename only**: Because of `\graphicspath`, write
-  `\includegraphics{figure1}` rather than
-  `\includegraphics{Paper_files/figure1}` or
-  `\includegraphics{Extracted_figures/figure1}`.
+- **Image beside text**: `\begin{columns}[T]` with left ~0.50\textwidth
+  (text) and right ~0.47\textwidth (figure). Do not place figures below
+  text.
+- **Text-only slides must not span full width.** If a slide has no
+  figure, bullets running edge-to-edge leave the lower half of a 16:9
+  page empty and look sparse. Do one of the following instead:
+  1. Constrain the bullet column to ~0.65-0.70\textwidth (wrap in a
+     `minipage` or a single-column `columns` block) so the text block
+     feels intentional, not stranded.
+  2. Pair the bullets with a relevant figure from `Extracted_figures/`
+     in a `columns` layout (preferred when a figure genuinely supports
+     the point).
+  3. Split the bullets across two slides so each one has enough
+     content to fill vertical space.
+  Never leave a wide, short bullet list floating at the top of an
+  otherwise empty slide.
+- **Text above footer**: `\vspace{-0.4em}` at frame start; cap figure
+  height (e.g. `height=0.58\textheight`); use `{\small ...}` for dense
+  slides.
 
 ## Style
 
-- **Sub-bullet color**: All bullet levels must use the same accent color.
-  Override Beamer defaults if needed.
-- **Logo default**: The footer logo is enabled by default
-  (`\renewcommand{\mylogo}{...}` uncommented) and points to
-  `Assets/logo.jpg`. Prefer JPG for the footer logo when available.
-- **Slide naming**: Use descriptive, audience-friendly titles (e.g.,
-  "Situation recognition" over "Factor prediction").
+- **Sub-bullet color**: all bullet levels use the same accent color;
+  override Beamer defaults if needed.
+- **Logo default**: `\renewcommand{\mylogo}{...}` uncommented, pointing
+  to `Assets/logo.jpg`. Prefer JPG for the footer logo.
+- **Slide titles**: descriptive and audience-friendly (e.g., "Situation
+  recognition" over "Factor prediction").
 
 ## Tables and TikZ
 
-- The converter falls back to image rasterization for `\begin{tabular}`
-  and `\begin{tikzpicture}`.
-- Cropping is driven by the PDF's vector drawings (booktabs rule lines,
-  TikZ paths) and embedded image rects, not by whitespace heuristics.
-  Keep surrounding captions / bullet text out of the same horizontal band
-  as the table so the clip stays tight.
+- The converter rasterizes `\begin{tabular}` and `\begin{tikzpicture}`,
+  clipping to the element's own vector/image bbox (booktabs rule lines,
+  TikZ paths) rather than whitespace heuristics.
 - When a table shares a slide with bullet text, the converter snaps the
-  crop to the table's bottom rule line - do not place explanatory prose
-  immediately under a table that is meant to be extracted as an image;
-  put it in `\note{...}` or in a separate frame.
+  crop to the table's bottom rule line. Do not put explanatory prose
+  immediately under such a table; put it in `\note{...}` or on a
+  separate frame.
+- **Small tables go on the slide as-is.** If the paper's table has a
+  handful of rows and columns and stays legible at slide scale (roughly
+  up to ~5 rows x ~5 cols of short numbers), reproduce it directly.
+- **Large / dense tables must not be dumped onto the slide.** Tables
+  with many rows, many columns, or long numbers become unreadable when
+  shrunk to slide size. Do one of the following instead:
+  1. **Summarize the trend** in 2-3 bullets (e.g., "Model X beats
+     baseline by +4.1 mAP across all input sizes; gap widens at low
+     resolution") and move the full table to `\note{...}`.
+  2. **Show only the most important rows** (best-performing model,
+     chosen baseline, and the row that illustrates the key trade-off),
+     omitting the rest. Mention in `\note{...}` that the full table is
+     in the paper.
+  3. **Split** the table by metric or by row group across two slides
+     if every row genuinely matters.
+  The slide should answer "what should the audience take away?", not
+  "here is every number we reported."
